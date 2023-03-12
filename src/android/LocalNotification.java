@@ -68,6 +68,7 @@ import de.appplant.cordova.plugin.notification.Notification;
 import de.appplant.cordova.plugin.notification.Options;
 import de.appplant.cordova.plugin.notification.Request;
 import de.appplant.cordova.plugin.notification.action.ActionGroup;
+import android.Manifest;
 
 import static android.Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS;
 import static android.content.Context.POWER_SERVICE;
@@ -104,6 +105,9 @@ public class LocalNotification extends CordovaPlugin {
     private static int REQUEST_IGNORE_BATTERY_CALL = 20;
 
     private CallbackContext callbackContext;
+    
+    public static final String POST_NOTIFICATIONS = Manifest.permission.POST_NOTIFICATIONS;
+    public static final int REQUEST_POST_NOTIFICATIONS = 30;
 
     /**
      * Called after plugin construction and fields have been initialized. Prefer to
@@ -203,7 +207,6 @@ public class LocalNotification extends CordovaPlugin {
 
         return true;
     }
-
     /**
      * required for android 13 to get the runtime notification permissions
      *
@@ -214,6 +217,7 @@ public class LocalNotification extends CordovaPlugin {
     private void dummyNotifications(CallbackContext command) {
 
         fireEvent("dummyNotifications");
+
         NotificationManager mNotificationManager;
         NotificationCompat.Builder mBuilder;
         String NOTIFICATION_CHANNEL_ID = "10004457";
@@ -413,6 +417,10 @@ public class LocalNotification extends CordovaPlugin {
      * @param command The callback context used when calling back into JavaScript.
      */
     private void check(CallbackContext command) {
+        if(!cordova.hasPermission(POST_NOTIFICATIONS))
+        {
+            cordova.requestPermission(this, REQUEST_POST_NOTIFICATIONS, POST_NOTIFICATIONS);
+        }
         boolean allowed = getNotMgr().hasPermission();
         success(command, allowed);
     }
