@@ -30,6 +30,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Build;
 import android.service.notification.StatusBarNotification;
 import android.util.Pair;
 import android.util.Log;
@@ -178,6 +179,12 @@ public final class Notification {
         List<Pair<Date, Intent>> intents = new ArrayList<Pair<Date, Intent>>();
         Set<String> ids                  = new ArraySet<String>();
         AlarmManager mgr                 = getAlarmMgr();
+
+        if (SDK_INT >= Build.VERSION_CODES.S) {
+            if (mgr.canScheduleExactAlarms() == false) {
+                return;
+            }
+        }
 
         cancelScheduledAlarms();
 

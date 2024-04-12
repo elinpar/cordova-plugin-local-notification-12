@@ -24,12 +24,14 @@
 
 package de.appplant.cordova.plugin.notification;
 
+import android.app.AlarmManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.media.AudioAttributes;
 import android.net.Uri;
+import android.os.Build;
 import android.service.notification.StatusBarNotification;
 import androidx.core.app.NotificationManagerCompat;
 
@@ -82,7 +84,7 @@ public final class Manager {
      * Check if app has local notification permission.
      */
     public boolean hasPermission() {
-        return getNotCompMgr().areNotificationsEnabled();
+        return getNotCompMgr().areNotificationsEnabled() && canSchedule();
     }
 
     /**
@@ -98,6 +100,14 @@ public final class Manager {
         toast.schedule(request, receiver);
 
         return toast;
+    }
+
+    public boolean canSchedule() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            return alarmManager.canScheduleExactAlarms();
+        }
+        return true;
     }
 
     /**

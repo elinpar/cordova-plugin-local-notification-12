@@ -38,6 +38,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.util.Log;
 import android.util.Pair;
 import android.view.View;
 // Notification permission
@@ -71,6 +72,8 @@ import de.appplant.cordova.plugin.notification.action.ActionGroup;
 import android.Manifest;
 
 import static android.Manifest.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS;
+import static android.Manifest.permission.SCHEDULE_EXACT_ALARM;
+import static android.Manifest.permission.USE_EXACT_ALARM;
 import static android.content.Context.POWER_SERVICE;
 import static android.os.Build.VERSION.SDK_INT;
 import static android.os.Build.VERSION_CODES.M;
@@ -108,6 +111,8 @@ public class LocalNotification extends CordovaPlugin {
     
     public static final String POST_NOTIFICATIONS = Manifest.permission.POST_NOTIFICATIONS;
     public static final int REQUEST_POST_NOTIFICATIONS = 30;
+
+    public static final int REQUEST_SCHEDULE_EXACT_ALARM = 40;
 
     /**
      * Called after plugin construction and fields have been initialized. Prefer to
@@ -417,10 +422,31 @@ public class LocalNotification extends CordovaPlugin {
      * @param command The callback context used when calling back into JavaScript.
      */
     private void check(CallbackContext command) {
-        if(!cordova.hasPermission(POST_NOTIFICATIONS))
-        {
-            cordova.requestPermission(this, REQUEST_POST_NOTIFICATIONS, POST_NOTIFICATIONS);
+        ArrayList<String> permissions = new ArrayList<>();
+
+
+
+        if(!cordova.hasPermission(POST_NOTIFICATIONS)) {
+            permissions.add(POST_NOTIFICATIONS);
+            Log.d("LocalNotifications","DOES NOT HAVE PERMISSION " + POST_NOTIFICATIONS);
         }
+
+        if(!cordova.hasPermission(USE_EXACT_ALARM)) {
+            permissions.add(USE_EXACT_ALARM);
+            Log.d("LocalNotifications","DOES NOT HAVE PERMISSION " + USE_EXACT_ALARM);
+        }
+
+        if(!permissions.isEmpty())
+        {
+            String[] permissionsArray = permissions.toArray(new String[permissions.size()]);
+            cordova.requestPermissions(this, REQUEST_POST_NOTIFICATIONS, permissionsArray);
+            Log.d("LocalNotifications","Requested permissions");
+        }
+
+        // if(!cordova.hasPermission(SCHEDULE_EXACT_ALARM))
+        // {
+        //     cordova.requestPermission(this, REQUEST_SCHEDULE_EXACT_ALARM, SCHEDULE_EXACT_ALARM);
+        // }
         boolean allowed = getNotMgr().hasPermission();
         success(command, allowed);
     }
@@ -471,15 +497,16 @@ public class LocalNotification extends CordovaPlugin {
      */
     private void schedule(JSONArray toasts, CallbackContext command) {
         Manager mgr = getNotMgr();
+        if(mgr.canSchedule()) {
+            for (int i = 0; i < toasts.length(); i++) {
+                JSONObject dict = toasts.optJSONObject(i);
+                Options options = new Options(dict);
+                Request request = new Request(options);
+                Notification toast = mgr.schedule(request, TriggerReceiver.class);
 
-        for (int i = 0; i < toasts.length(); i++) {
-            JSONObject dict = toasts.optJSONObject(i);
-            Options options = new Options(dict);
-            Request request = new Request(options);
-            Notification toast = mgr.schedule(request, TriggerReceiver.class);
-
-            if (toast != null) {
-                fireEvent("add", toast);
+                if (toast != null) {
+                    fireEvent("add", toast);
+                }
             }
         }
 
